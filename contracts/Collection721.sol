@@ -103,10 +103,6 @@ contract Collection721 is ERC721, ERC721URIStorage, Ownable {
         return dropReturn;
     }
 
-    function getBlockTime() public view returns (uint256) {
-        return block.timestamp;
-    }
-
     function getWhiteListAccess(
         address _userAddress
     ) public view returns (bool) {

@@ -12,6 +12,15 @@ const sleep = (timeout: number) => {
     })
 }
 
+const getBlockTime = async () => {
+    const latestBlock = await hre.ethers.provider.getBlock("latest")
+    if (latestBlock?.timestamp) {
+        return latestBlock.timestamp;
+    } else {
+        throw new Error('error getting block timestamp')
+    }
+}
+
 describe("Drop", () => {
     let owner: HardhatEthersSigner;
     let user_1: HardhatEthersSigner;
@@ -72,18 +81,18 @@ describe("Drop", () => {
 
         const SUPPLY = 9;
         const MINT_LIMIT_PER_WALLET = 5;
-        let START_TIME: bigint;
-        let END_TIME: bigint;
+        let START_TIME: number;
+        let END_TIME: number;
         const PRICE = ethers.parseEther("0.1");
         const HAS_WHITE_LIST_PHASE = true;
-        let WHITE_LIST_END_TIME: bigint;
+        let WHITE_LIST_END_TIME: number;
         const WHITE_LIST_PRICE = ethers.parseEther("0.01");
         const BASE_URI = "ipfs://yyy"
         describe("During Drop", () => {
             beforeEach(async () => {
-                START_TIME = await collection721.getBlockTime()
-                END_TIME = START_TIME + 4n;
-                WHITE_LIST_END_TIME = START_TIME + 2n;
+                START_TIME = await getBlockTime()
+                END_TIME = START_TIME + 4;
+                WHITE_LIST_END_TIME = START_TIME + 2;
                 const tx = await collection721.connect(owner).createDrop(
                     SUPPLY,
                     MINT_LIMIT_PER_WALLET,
