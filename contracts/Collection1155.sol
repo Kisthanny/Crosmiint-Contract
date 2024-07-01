@@ -62,6 +62,28 @@ contract Collection1155 is ERC1155, Ownable {
         _mintBatch(msg.sender, ids, amounts, data);
     }
 
+    function burn(
+        address account,
+        uint256 id,
+        uint256 amount
+    ) public onlyOwner {
+        require(account == msg.sender, "Burn: caller is not the owner");
+        _burn(account, id, amount);
+        _totalSupply[id] -= amount;
+    }
+
+    function burnBatch(
+        address account,
+        uint256[] memory ids,
+        uint256[] memory amounts
+    ) public onlyOwner {
+        require(account == msg.sender, "Burn: caller is not the owner");
+        _burnBatch(account, ids, amounts);
+        for (uint256 i = 0; i < ids.length; i++) {
+            _totalSupply[ids[i]] -= amounts[i];
+        }
+    }
+
     function _setTokenURI(uint256 tokenId, string memory metadataURI) internal {
         _tokenURIs[tokenId] = metadataURI;
     }
