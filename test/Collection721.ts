@@ -38,10 +38,11 @@ describe("Drop", () => {
         const DROP_NAME = "Noct Abstract";
         const DROP_SYMBOL = "NAT";
         const DROP_LOGO = "";
+        const GATEWAY = "0x000000007f56768dE3133034FA730a909003a165";
 
         beforeEach(async () => {
             const Collection721Factory = await hre.ethers.getContractFactory("Collection721");
-            collection721 = await Collection721Factory.connect(owner).deploy(DROP_NAME, DROP_SYMBOL, DROP_LOGO);
+            collection721 = await Collection721Factory.connect(owner).deploy(DROP_NAME, DROP_SYMBOL, DROP_LOGO, GATEWAY);
         })
 
         it("Sets ERC-721 basic info", async () => {

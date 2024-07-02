@@ -38,6 +38,7 @@ describe("NFTMarketplace", () => {
         deploymentTransaction(): ContractTransactionResponse;
         getAddress(): Promise<string>;
     }
+    const GATEWAY = "0x000000007f56768dE3133034FA730a909003a165";
 
     beforeEach(async () => {
         // set up signers
@@ -45,14 +46,14 @@ describe("NFTMarketplace", () => {
 
         // deploy Collection721 contract
         const Collection721Factory = await hre.ethers.getContractFactory("Collection721");
-        collection721 = await Collection721Factory.connect(owner).deploy("Collection721", "C721", "") as Collection721 & {
+        collection721 = await Collection721Factory.connect(owner).deploy("Collection721", "C721", "", GATEWAY) as Collection721 & {
             deploymentTransaction(): ContractTransactionResponse;
             getAddress(): Promise<string>;
         };
 
         // deploy Collection1155 contract
         const Collection1155Factory = await hre.ethers.getContractFactory("Collection1155");
-        collection1155 = await Collection1155Factory.connect(owner).deploy("Collection1155", "C1155", "") as Collection1155 & {
+        collection1155 = await Collection1155Factory.connect(owner).deploy("Collection1155", "C1155", "", GATEWAY) as Collection1155 & {
             deploymentTransaction(): ContractTransactionResponse;
             getAddress(): Promise<string>;
         };
