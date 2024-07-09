@@ -54,6 +54,8 @@ contract Collection721 is
         uint256 whiteListPrice;
     }
 
+    event TokenMinted(uint256 tokenId, uint256 amount);
+
     struct CrosschainMessage {
         uint256 tokenId;
         address newHolder;
@@ -135,6 +137,8 @@ contract Collection721 is
         _safeMint(message.newHolder, message.tokenId);
         _burntBy[message.tokenId] = address(0);
 
+        emit TokenMinted(message.tokenId, 1);
+
         return bytes32("");
     }
 
@@ -205,7 +209,9 @@ contract Collection721 is
         return drop.whiteListAddresses[_userAddress];
     }
 
-    function getMintCount(address _userAddress) public view onlyBase returns (uint256) {
+    function getMintCount(
+        address _userAddress
+    ) public view onlyBase returns (uint256) {
         Drop storage drop = DropList[_nextDropId];
         return drop.mintedPerWallet[_userAddress];
     }
@@ -248,6 +254,8 @@ contract Collection721 is
         }
         drop.minted += amount;
         drop.mintedPerWallet[msg.sender] += amount;
+
+        emit TokenMinted(_nextTokenId - amount, amount);
     }
 
     function createDrop(

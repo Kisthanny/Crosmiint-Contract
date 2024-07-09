@@ -29,6 +29,8 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
     mapping(uint256 => uint256) private _totalSupply;
     mapping(uint16 => address) private _crosschainContract;
 
+    event TokenMinted(uint256 tokenId, uint256 amount);
+
     constructor(
         string memory _name,
         string memory _symbol,
@@ -119,6 +121,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         _mint(msg.sender, _nextTokenId, amount, data);
         _setTokenURI(_nextTokenId, metadataURI);
         _totalSupply[_nextTokenId] += amount;
+        emit TokenMinted(_nextTokenId, amount);
         _nextTokenId++;
     }
 
@@ -132,6 +135,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         _mint(holder, tokenId, amount, "");
         _setTokenURI(tokenId, metadataURI);
         _totalSupply[tokenId] += amount;
+        emit TokenMinted(tokenId, amount);
     }
 
     function mintBatch(

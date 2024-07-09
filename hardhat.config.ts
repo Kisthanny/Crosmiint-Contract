@@ -7,12 +7,12 @@ const config: HardhatUserConfig = {
   networks: {
     sepolia: {
       url: process.env.RPC_URL_SEPOLIA,
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY_1!, process.env.PRIVATE_KEY_2!],
       timeout: 30000,
     },
     shibuya: {
       url: process.env.RPC_URL_SHIBUYA,
-      accounts: [process.env.PRIVATE_KEY!]
+      accounts: [process.env.PRIVATE_KEY_1!]
     },
   }
 };

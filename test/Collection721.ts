@@ -149,6 +149,9 @@ describe("Drop", () => {
                 let ownerStartBalance: bigint;
                 beforeEach(async () => {
                     ownerStartBalance = await hre.ethers.provider.getBalance(owner.address);
+                    collection721.addListener("TokenMinted", (tokenId, amount) => {
+                        console.log({ tokenId, amount });
+                    })
                     const tx = await collection721.connect(user_1).safeMint(5, { value: WHITE_LIST_PRICE * 5n });
                     await tx.wait();
                 })
