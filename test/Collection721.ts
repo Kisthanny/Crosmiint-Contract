@@ -42,7 +42,7 @@ describe("Drop", () => {
 
         beforeEach(async () => {
             const Collection721Factory = await hre.ethers.getContractFactory("Collection721");
-            collection721 = await Collection721Factory.connect(owner).deploy(DROP_NAME, DROP_SYMBOL, DROP_LOGO, GATEWAY);
+            collection721 = await Collection721Factory.connect(owner).deploy(DROP_NAME, DROP_SYMBOL, DROP_LOGO, GATEWAY, true);
         })
 
         it("Sets ERC-721 basic info", async () => {
@@ -128,7 +128,8 @@ describe("Drop", () => {
             })
             it("Sets Drop info", async () => {
                 const currentDrop = await collection721.currentDrop();
-                const { supply, mintLimitPerWallet, startTime, endTime, price, hasWhiteListPhase, whiteListEndTime, whiteListPrice } = currentDrop
+                const { dropId, supply, mintLimitPerWallet, startTime, endTime, price, hasWhiteListPhase, whiteListEndTime, whiteListPrice } = currentDrop
+                expect(dropId).equal(1n);
                 expect(supply).equal(SUPPLY);
                 expect(mintLimitPerWallet).equal(MINT_LIMIT_PER_WALLET);
                 expect(startTime).equal(START_TIME);

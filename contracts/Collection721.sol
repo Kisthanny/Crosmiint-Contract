@@ -25,6 +25,7 @@ contract Collection721 is
     string public baseURI;
     string public logoURI;
     bool private _baseURISet;
+    bool public isBase;
 
     struct Drop {
         uint256 supply;
@@ -41,6 +42,7 @@ contract Collection721 is
     }
 
     struct DropReturn {
+        uint16 dropId;
         uint256 supply;
         uint256 minted;
         uint256 mintLimitPerWallet;
@@ -65,10 +67,17 @@ contract Collection721 is
         string memory _name,
         string memory _symbol,
         string memory _logoURI,
-        address gateway
+        address gateway,
+        bool _isBase
     ) ERC721(_name, _symbol) Ownable(msg.sender) {
         logoURI = _logoURI;
         _gateway = gateway;
+        isBase = _isBase;
+    }
+
+    modifier onlyBase() {
+        require(isBase, "Only Base contract could call this function");
+        _;
     }
 
     modifier onlyDuringDrop() {
@@ -163,9 +172,10 @@ contract Collection721 is
         );
     }
 
-    function currentDrop() public view returns (DropReturn memory) {
+    function currentDrop() public view onlyBase returns (DropReturn memory) {
         Drop storage drop = DropList[_nextDropId];
         DropReturn memory dropReturn = DropReturn(
+            _nextDropId,
             drop.supply,
             drop.minted,
             drop.mintLimitPerWallet,
@@ -190,30 +200,30 @@ contract Collection721 is
 
     function getWhiteListAccess(
         address _userAddress
-    ) public view returns (bool) {
+    ) public view onlyBase returns (bool) {
         Drop storage drop = DropList[_nextDropId];
         return drop.whiteListAddresses[_userAddress];
     }
 
-    function getMintCount(address _userAddress) public view returns (uint256) {
+    function getMintCount(address _userAddress) public view onlyBase returns (uint256) {
         Drop storage drop = DropList[_nextDropId];
         return drop.mintedPerWallet[_userAddress];
     }
 
     function setBaseURI(
         string memory _baseURI
-    ) public onlyOwner beforeUpload onlyAfterDrop {
+    ) public onlyOwner beforeUpload onlyAfterDrop onlyBase {
         baseURI = _baseURI;
         _baseURISet = true;
     }
 
-    function setLogoURI(string memory _logoURI) public onlyOwner {
+    function setLogoURI(string memory _logoURI) public onlyOwner onlyBase {
         logoURI = _logoURI;
     }
 
     function safeMint(
         uint256 amount
-    ) public payable onlyDuringDrop canMint(amount) {
+    ) public payable onlyDuringDrop canMint(amount) onlyBase {
         Drop storage drop = DropList[_nextDropId];
         uint256 pricePerToken = drop.price;
         if (
@@ -250,7 +260,7 @@ contract Collection721 is
         uint256 _whiteListEndTime,
         uint256 _whiteListPrice,
         address[] memory _whiteListAddresses
-    ) external onlyOwner beforeUpload {
+    ) external onlyOwner beforeUpload onlyBase {
         Drop storage drop = DropList[_nextDropId];
         require(block.timestamp > drop.endTime, "Ongoing drop exists");
 

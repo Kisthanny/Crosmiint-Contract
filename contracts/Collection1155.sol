@@ -16,6 +16,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
     string public symbol;
     string public logoURI;
     uint256 private _nextTokenId;
+    bool public isBase;
 
     struct CrosschainMessage {
         uint256 tokenId;
@@ -32,12 +33,19 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         string memory _name,
         string memory _symbol,
         string memory _logoURI,
-        address gateway
+        address gateway,
+        bool _isBase
     ) ERC1155("") Ownable(msg.sender) {
         name = _name;
         symbol = _symbol;
         logoURI = _logoURI;
         _gateway = gateway;
+        isBase = _isBase;
+    }
+
+    modifier onlyBase() {
+        require(isBase, "Only Base contract could call this function");
+        _;
     }
 
     // asuming the gateway already handles verification
@@ -107,7 +115,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         uint256 amount,
         string memory metadataURI,
         bytes memory data
-    ) public onlyOwner {
+    ) public onlyOwner onlyBase {
         _mint(msg.sender, _nextTokenId, amount, data);
         _setTokenURI(_nextTokenId, metadataURI);
         _totalSupply[_nextTokenId] += amount;
@@ -130,7 +138,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         uint256[] memory amounts,
         string[] memory metadataURIs,
         bytes memory data
-    ) public onlyOwner {
+    ) public onlyOwner onlyBase {
         require(
             amounts.length == metadataURIs.length,
             "Amounts and metadataURIs length mismatch"

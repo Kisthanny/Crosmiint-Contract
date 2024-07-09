@@ -42,7 +42,7 @@ describe("Drop", () => {
 
         beforeEach(async () => {
             const Collection1155Factory = await hre.ethers.getContractFactory("Collection1155");
-            collection1155 = await Collection1155Factory.connect(owner).deploy(DROP_NAME, DROP_SYMBOL, DROP_LOGO, GATEWAY);
+            collection1155 = await Collection1155Factory.connect(owner).deploy(DROP_NAME, DROP_SYMBOL, DROP_LOGO, GATEWAY, true);
         })
 
         it("Sets ERC-1155 basic info", async () => {
