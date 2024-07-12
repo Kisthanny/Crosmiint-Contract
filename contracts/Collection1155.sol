@@ -29,7 +29,19 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
     mapping(uint256 => uint256) private _totalSupply;
     mapping(uint16 => address) private _crosschainContract;
 
-    event TokenMinted(uint256 tokenId, uint256 amount);
+    event TokenMinted(uint256 indexed tokenId, string tokenURI, uint256 amount, address holder);
+    event TokenBurned(uint256 indexed tokenId, uint256 amount);
+    event CrosschainTransferInitiated(
+        uint256 indexed tokenId,
+        string tokenURI,
+        address indexed newHolder,
+        uint256 amount,
+        uint16 destinationNetwork
+    );
+    event CrosschainAddressSet(
+        uint16 indexed networkId,
+        address indexed contractAddress
+    );
 
     constructor(
         string memory _name,
@@ -92,6 +104,14 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
             3000000,
             encodeCrosschainMessage(_tokenId, _tokenURI, _newHolder, _amount)
         );
+
+        emit CrosschainTransferInitiated(
+            _tokenId,
+            _tokenURI,
+            _newHolder,
+            _amount,
+            _destinationNetwork
+        );
     }
 
     function encodeCrosschainMessage(
@@ -121,7 +141,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         _mint(msg.sender, _nextTokenId, amount, data);
         _setTokenURI(_nextTokenId, metadataURI);
         _totalSupply[_nextTokenId] += amount;
-        emit TokenMinted(_nextTokenId, amount);
+        emit TokenMinted(_nextTokenId, metadataURI, amount, msg.sender);
         _nextTokenId++;
     }
 
@@ -135,7 +155,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         _mint(holder, tokenId, amount, "");
         _setTokenURI(tokenId, metadataURI);
         _totalSupply[tokenId] += amount;
-        emit TokenMinted(tokenId, amount);
+        emit TokenMinted(tokenId, metadataURI, amount, holder);
     }
 
     function mintBatch(
@@ -166,6 +186,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         );
         _burn(account, id, amount);
         _totalSupply[id] -= amount;
+        emit TokenBurned(id, amount);
     }
 
     function burnBatch(
@@ -186,5 +207,17 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
 
     function totalSupply(uint256 tokenId) public view returns (uint256) {
         return _totalSupply[tokenId];
+    }
+
+    function setCrosschainAddress(
+        uint16 networkId,
+        address contractAddress
+    ) public onlyOwner {
+        require(
+            _crosschainContract[networkId] == address(0),
+            "crossChain contract already exist"
+        );
+        _crosschainContract[networkId] = contractAddress;
+        emit CrosschainAddressSet(networkId, contractAddress);
     }
 }

@@ -54,12 +54,34 @@ contract Collection721 is
         uint256 whiteListPrice;
     }
 
-    event TokenMinted(uint256 tokenId, uint256 amount);
-
     struct CrosschainMessage {
         uint256 tokenId;
         address newHolder;
     }
+
+    event TokenMinted(uint256 tokenId, uint256 amount, address indexed minter);
+    event DropCreated(
+        uint16 dropId,
+        uint256 supply,
+        uint256 mintLimitPerWallet,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 price,
+        bool hasWhiteListPhase,
+        uint256 whiteListEndTime,
+        uint256 whiteListPrice
+    );
+    event BaseURISet(string baseURI);
+    event LogoURISet(string logoURI);
+    event TokenBurned(uint256 tokenId, address indexed burner);
+    event CrosschainTransferInitiated(
+        uint256 tokenId,
+        address indexed newHolder,
+        uint16 destinationNetwork,
+        address indexed initiator
+    );
+    event CrosschainAddressSet(uint16 network, address contractAddress);
+    event WhiteListAddressSet(uint16 dropId, address indexed userAddress);
 
     mapping(uint16 => Drop) private DropList;
     mapping(uint256 => address) private _burntBy;
@@ -121,10 +143,15 @@ contract Collection721 is
         uint16 _network,
         address _contractAddress
     ) public onlyOwner {
+        require(
+            _crosschainContract[_network] == address(0),
+            "crossChain contract already exist"
+        );
         _crosschainContract[_network] = _contractAddress;
+        emit CrosschainAddressSet(_network, _contractAddress);
     }
 
-    // asuming the gateway already handles verification
+    // assuming the gateway already handles verification
     // we just need to mint on received
     function onGmpReceived(
         bytes32,
@@ -137,7 +164,7 @@ contract Collection721 is
         _safeMint(message.newHolder, message.tokenId);
         _burntBy[message.tokenId] = address(0);
 
-        emit TokenMinted(message.tokenId, 1);
+        emit TokenMinted(message.tokenId, 1, message.newHolder);
 
         return bytes32("");
     }
@@ -174,6 +201,13 @@ contract Collection721 is
             3000000,
             encodeCrosschainMessage(_tokenId, _newHolder)
         );
+
+        emit CrosschainTransferInitiated(
+            _tokenId,
+            _newHolder,
+            _destinationNetwork,
+            msg.sender
+        );
     }
 
     function currentDrop() public view onlyBase returns (DropReturn memory) {
@@ -196,6 +230,8 @@ contract Collection721 is
     function burn(uint256 _tokenId) public override {
         super.burn(_tokenId);
         _burntBy[_tokenId] = msg.sender;
+
+        emit TokenBurned(_tokenId, msg.sender);
     }
 
     function burntBy(uint256 _tokenId) public view returns (address) {
@@ -221,10 +257,14 @@ contract Collection721 is
     ) public onlyOwner beforeUpload onlyAfterDrop onlyBase {
         baseURI = _baseURI;
         _baseURISet = true;
+
+        emit BaseURISet(_baseURI);
     }
 
     function setLogoURI(string memory _logoURI) public onlyOwner onlyBase {
         logoURI = _logoURI;
+
+        emit LogoURISet(_logoURI);
     }
 
     function safeMint(
@@ -255,7 +295,7 @@ contract Collection721 is
         drop.minted += amount;
         drop.mintedPerWallet[msg.sender] += amount;
 
-        emit TokenMinted(_nextTokenId - amount, amount);
+        emit TokenMinted(_nextTokenId - amount, amount, msg.sender);
     }
 
     function createDrop(
@@ -288,7 +328,20 @@ contract Collection721 is
 
         for (uint256 i = 0; i < _whiteListAddresses.length; i++) {
             newDrop.whiteListAddresses[_whiteListAddresses[i]] = true;
+            emit WhiteListAddressSet(_nextDropId, _whiteListAddresses[i]);
         }
+
+        emit DropCreated(
+            _nextDropId,
+            _supply,
+            _mintLimitPerWallet,
+            _startTime,
+            _endTime,
+            _price,
+            _hasWhiteListPhase,
+            _whiteListEndTime,
+            _whiteListPrice
+        );
     }
 
     function tokenURI(

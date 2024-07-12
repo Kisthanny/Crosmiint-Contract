@@ -55,12 +55,19 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
     event OfferMade(
         uint256 indexed listingId,
         address indexed offerer,
-        uint256 offerPrice
+        uint256 offerPrice,
+        uint256 offerIndex
     );
     event OfferAccepted(
         uint256 indexed listingId,
         address indexed offerer,
-        uint256 offerPrice
+        uint256 offerPrice,
+        uint256 offerIndex
+    );
+    event OfferCancelled(
+        uint256 indexed listingId,
+        address indexed offerer,
+        uint256 offerIndex
     );
     event IntermediaryChanged(address indexed newIntermediary);
     event ServiceFeePercentChanged(uint256 newServiceFeePercent);
@@ -205,7 +212,19 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
             Offer({offerer: msg.sender, offerPrice: offerPrice, active: true})
         );
 
-        emit OfferMade(listingId, msg.sender, offerPrice);
+        emit OfferMade(
+            listingId,
+            msg.sender,
+            offerPrice,
+            offers[listingId].length - 1
+        );
+    }
+
+    function getOffer(
+        uint256 _listingId,
+        uint256 _offerIndex
+    ) public view returns (Offer memory) {
+        return offers[_listingId][_offerIndex];
     }
 
     function acceptOffer(uint256 listingId, uint256 offerIndex) external {
@@ -243,7 +262,27 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
             );
         }
 
-        emit OfferAccepted(listingId, offer.offerer, offer.offerPrice);
+        emit OfferAccepted(
+            listingId,
+            offer.offerer,
+            offer.offerPrice,
+            offerIndex
+        );
+    }
+
+    function cancelOffer(uint256 listingId, uint256 offerIndex) external {
+        Offer storage offer = offers[listingId][offerIndex];
+        require(
+            offer.offerer == msg.sender,
+            "Only the offerer can cancel the offer"
+        );
+        require(offer.active, "Offer is not active");
+
+        offer.active = false;
+
+        payable(offer.offerer).transfer(offer.offerPrice);
+
+        emit OfferCancelled(listingId, msg.sender, offerIndex);
     }
 
     function getActiveListingsByContract(
