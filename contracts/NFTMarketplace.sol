@@ -26,6 +26,7 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
     struct Offer {
         address offerer;
         uint256 offerPrice;
+        uint256 amount; // Add amount to Offer struct
         bool active;
     }
 
@@ -50,18 +51,21 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
     event Bought(
         uint256 indexed listingId,
         address indexed buyer,
-        uint256 price
+        uint256 price,
+        uint256 amount
     );
     event OfferMade(
         uint256 indexed listingId,
         address indexed offerer,
         uint256 offerPrice,
+        uint256 amount,
         uint256 offerIndex
     );
     event OfferAccepted(
         uint256 indexed listingId,
         address indexed offerer,
         uint256 offerPrice,
+        uint256 amount,
         uint256 offerIndex
     );
     event OfferCancelled(
@@ -170,15 +174,28 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
         emit Cancelled(listingId);
     }
 
-    function buyNFT(uint256 listingId) external payable {
+    function buyNFT(uint256 listingId, uint256 amount) external payable {
         Listing storage listing = listings[listingId];
         require(listing.active, "Listing is not active");
-        require(msg.value >= listing.price, "Insufficient payment");
+        require(amount > 0, "Amount must be greater than zero");
 
-        listing.active = false;
+        if (listing.tokenType == TokenType.ERC721) {
+            require(amount == 1, "Invalid amount for ERC721");
+        } else {
+            require(amount <= listing.amount, "Insufficient listed amount");
+        }
 
-        uint256 serviceFee = (listing.price * serviceFeePercent) / 10000;
-        uint256 sellerProceeds = listing.price - serviceFee;
+        uint256 totalPrice = listing.price * amount;
+        require(msg.value >= totalPrice, "Insufficient payment");
+
+        if (listing.tokenType == TokenType.ERC1155 && amount < listing.amount) {
+            listing.amount -= amount;
+        } else {
+            listing.active = false;
+        }
+
+        uint256 serviceFee = (totalPrice * serviceFeePercent) / 10000;
+        uint256 sellerProceeds = totalPrice - serviceFee;
 
         payable(listing.seller).transfer(sellerProceeds);
         payable(intermediary).transfer(serviceFee);
@@ -194,28 +211,46 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
                 address(this),
                 msg.sender,
                 listing.tokenId,
-                listing.amount,
+                amount,
                 ""
             );
         }
 
-        emit Bought(listingId, msg.sender, listing.price);
+        emit Bought(listingId, msg.sender, totalPrice, amount);
     }
 
-    function makeOffer(uint256 listingId, uint256 offerPrice) external payable {
-        require(msg.value == offerPrice, "Offer price must equal sent value");
+    function makeOffer(
+        uint256 listingId,
+        uint256 offerPrice,
+        uint256 amount
+    ) external payable {
+        require(amount > 0, "Amount must be greater than zero");
+        require(
+            msg.value == offerPrice * amount,
+            "Offer price must equal sent value"
+        );
         require(offerPrice > 0, "Offer price must be greater than zero");
         Listing storage listing = listings[listingId];
         require(listing.active, "Listing is not active");
+        require(
+            amount <= listing.amount,
+            "Offer amount exceeds listing amount"
+        );
 
         offers[listingId].push(
-            Offer({offerer: msg.sender, offerPrice: offerPrice, active: true})
+            Offer({
+                offerer: msg.sender,
+                offerPrice: offerPrice,
+                amount: amount,
+                active: true
+            })
         );
 
         emit OfferMade(
             listingId,
             msg.sender,
             offerPrice,
+            amount,
             offers[listingId].length - 1
         );
     }
@@ -236,12 +271,22 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
         require(listing.active, "Listing is not active");
         Offer storage offer = offers[listingId][offerIndex];
         require(offer.active, "Offer is not active");
+        require(
+            offer.amount <= listing.amount,
+            "Offer amount exceeds listing amount"
+        );
 
-        listing.active = false;
+        if (offer.amount < listing.amount) {
+            listing.amount -= offer.amount;
+        } else {
+            listing.active = false;
+        }
+
         offer.active = false;
 
-        uint256 serviceFee = (offer.offerPrice * serviceFeePercent) / 10000;
-        uint256 sellerProceeds = offer.offerPrice - serviceFee;
+        uint256 totalOfferPrice = offer.offerPrice * offer.amount;
+        uint256 serviceFee = (totalOfferPrice * serviceFeePercent) / 10000;
+        uint256 sellerProceeds = totalOfferPrice - serviceFee;
 
         payable(listing.seller).transfer(sellerProceeds);
         payable(intermediary).transfer(serviceFee);
@@ -257,7 +302,7 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
                 address(this),
                 offer.offerer,
                 listing.tokenId,
-                listing.amount,
+                offer.amount,
                 ""
             );
         }
@@ -266,6 +311,7 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
             listingId,
             offer.offerer,
             offer.offerPrice,
+            offer.amount,
             offerIndex
         );
     }
@@ -280,7 +326,7 @@ contract NFTMarketplace is Ownable, ERC1155Holder, ERC721Holder {
 
         offer.active = false;
 
-        payable(offer.offerer).transfer(offer.offerPrice);
+        payable(offer.offerer).transfer(offer.offerPrice * offer.amount);
 
         emit OfferCancelled(listingId, msg.sender, offerIndex);
     }

@@ -135,7 +135,7 @@ describe("NFTMarketplace", () => {
 
             // user_2 buys the NFT
             const initialBalance = await hre.ethers.provider.getBalance(user_1.address);
-            await marketplace.connect(user_2).buyNFT(0, { value: ethers.parseEther("0.1") });
+            await marketplace.connect(user_2).buyNFT(0, 1, { value: ethers.parseEther("0.1") });
 
             // check owner balance after purchase
             const finalBalance = await hre.ethers.provider.getBalance(user_1.address);
