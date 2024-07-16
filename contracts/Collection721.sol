@@ -59,7 +59,7 @@ contract Collection721 is
         address newHolder;
     }
 
-    event TokenMinted(uint256 tokenId, uint256 amount, address indexed minter);
+    event TokenMinted(uint256 tokenId, uint256 amount, address indexed minter, bool isFromDrop);
     event DropCreated(
         uint16 dropId,
         uint256 supply,
@@ -164,7 +164,7 @@ contract Collection721 is
         _safeMint(message.newHolder, message.tokenId);
         _burntBy[message.tokenId] = address(0);
 
-        emit TokenMinted(message.tokenId, 1, message.newHolder);
+        emit TokenMinted(message.tokenId, 1, message.newHolder, false);
 
         return bytes32("");
     }
@@ -295,7 +295,7 @@ contract Collection721 is
         drop.minted += amount;
         drop.mintedPerWallet[msg.sender] += amount;
 
-        emit TokenMinted(_nextTokenId - amount, amount, msg.sender);
+        emit TokenMinted(_nextTokenId - amount, amount, msg.sender, true);
     }
 
     function createDrop(

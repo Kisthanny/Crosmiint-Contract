@@ -30,7 +30,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
     mapping(uint16 => address) private _crosschainContract;
 
     event TokenMinted(uint256 indexed tokenId, string tokenURI, uint256 amount, address holder);
-    event TokenBurned(uint256 indexed tokenId, uint256 amount);
+    event TokenBurned(uint256 indexed tokenId, uint256 amount, address holder);
     event CrosschainTransferInitiated(
         uint256 indexed tokenId,
         string tokenURI,
@@ -186,7 +186,7 @@ contract Collection1155 is ERC1155, Ownable, IGmpReceiver {
         );
         _burn(account, id, amount);
         _totalSupply[id] -= amount;
-        emit TokenBurned(id, amount);
+        emit TokenBurned(id, amount, account);
     }
 
     function burnBatch(
