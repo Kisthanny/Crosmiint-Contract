@@ -59,7 +59,12 @@ contract Collection721 is
         address newHolder;
     }
 
-    event TokenMinted(uint256 tokenId, uint256 amount, address indexed minter, bool isFromDrop);
+    event TokenMinted(
+        uint256 tokenId,
+        uint256 amount,
+        address indexed minter,
+        bool isFromDrop
+    );
     event DropCreated(
         uint16 dropId,
         uint256 supply,
@@ -139,6 +144,10 @@ contract Collection721 is
         _;
     }
 
+    function totalMinted() public view returns (uint256) {
+        return _nextTokenId;
+    }
+    
     function setCrosschainAddress(
         uint16 _network,
         address _contractAddress
